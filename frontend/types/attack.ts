@@ -42,3 +42,16 @@ export interface MatrixData {
   total_actors: number;
   total_techniques: number;
 }
+
+export interface ActorTechniqueRef {
+  technique_id: string;
+  name?: string; 
+}
+
+export interface Actor {
+  id: string;
+  name: string;
+  country?: string;
+  associated_groups?: string[];
+  techniques_used?: ActorTechniqueRef[];
+}

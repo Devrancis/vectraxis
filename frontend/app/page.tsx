@@ -3,7 +3,7 @@
 import React, { useState, useMemo } from "react";
 import { useMatrix } from "@/hooks/useMatrix";
 import { useActors, useActorDetail, useCompareActors } from "@/hooks/useActors";
-import { Technique } from "@/types/attack";
+import { Technique, Actor } from "@/types/attack";
 import AttackMatrix, { ComparisonSets } from "@/components/matrix/AttackMatrix";
 import ActorSidebar from "@/components/sidebar/ActorSidebar";
 import DetailPanel from "@/components/detail/DetailPanel";
@@ -21,13 +21,12 @@ export default function Home() {
   // Queries
   const { data: actorProfile } = useActorDetail(selectedActorId);
   const { data: comparisonResponse, isFetching: isComparing } = useCompareActors(selectedActorId, compareActorId);
-  console.log("RAW BACKEND PAYLOAD:", comparisonResponse);
 
   // Format Single Actor techniques for O(1) lookup
   const actorTechniqueSet = useMemo(() => {
     const set = new Set<string>();
     if (actorProfile?.techniques_used) {
-      actorProfile.techniques_used.forEach((t: any) => set.add(t.technique_id));
+      actorProfile.techniques_used.forEach((t: { technique_id: string }) => set.add(t.technique_id));
     }
     return set;
   }, [actorProfile]);
@@ -112,8 +111,8 @@ export default function Home() {
                   >
                     <option value="">Compare with...</option>
                     {allActors
-                      .filter((a: any) => a.id !== selectedActorId)
-                      .map((a: any) => (
+                      .filter((a: Actor) => a.id !== selectedActorId)
+                      .map((a: Actor) => (
                         <option key={a.id} value={a.id}>{a.name}</option>
                       ))}
                   </select>

@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import { useActors } from "@/hooks/useActors";
 import { Search, ShieldAlert, Globe, Briefcase, Loader2 } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Actor } from "@/types/attack";
 
 interface ActorSidebarProps {
   selectedActorId: string | null;
@@ -26,9 +27,9 @@ export default function ActorSidebar({ selectedActorId, onSelectActor }: ActorSi
   );
 
   // Client-side text match filtering over the fetched data stream
-  const filteredActors = actors.filter((actor: any) =>
+  const filteredActors = actors.filter((actor: Actor) =>
     actor.name.toLowerCase().includes(search.toLowerCase()) ||
-    actor.associated_groups.some((alias: string) => alias.toLowerCase().includes(search.toLowerCase()))
+    actor.associated_groups?.some((alias: string) => alias.toLowerCase().includes(search.toLowerCase()))
   );
 
   return (
@@ -97,7 +98,7 @@ export default function ActorSidebar({ selectedActorId, onSelectActor }: ActorSi
         ) : (
           <ScrollArea className="h-full">
             <div className="p-2 flex flex-col gap-1">
-              {filteredActors.map((actor: any) => {
+              {filteredActors.map((actor: Actor) => {
                 const isSelected = selectedActorId === actor.id;
                 return (
                   <button

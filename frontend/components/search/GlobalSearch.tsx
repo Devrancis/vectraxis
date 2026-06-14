@@ -1,8 +1,8 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { Search, Terminal, Users, Layers } from "lucide-react";
-import { MatrixData, Technique } from "@/types/attack";
+import { Search, Terminal, Users } from "lucide-react";
+import { MatrixData, Technique, Actor } from "@/types/attack";
 import {
   CommandDialog,
   CommandEmpty,
@@ -14,7 +14,7 @@ import {
 
 interface GlobalSearchProps {
   matrixData: MatrixData;
-  actors: any[];
+  actors: Actor[];
   onSelectActor: (actorId: string) => void;
   onSelectTechnique: (technique: Technique) => void;
 }
