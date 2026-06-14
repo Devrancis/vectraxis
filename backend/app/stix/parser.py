@@ -1,5 +1,5 @@
 import re
-from typing import Dict, Any, List, Tuple
+from typing import Dict, Any, List, Tuple, Optional
 from app.models.technique import Technique, Reference, Mitigation
 from app.models.actor import Actor, ActorTechniqueUsage
 from app.models.tactic import Tactic
