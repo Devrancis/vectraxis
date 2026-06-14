@@ -1,11 +1,14 @@
 "use client";
 
+import React, { useState } from "react";
 import { useMatrix } from "@/hooks/useMatrix";
 import AttackMatrix from "@/components/matrix/AttackMatrix";
+import ActorSidebar from "@/components/sidebar/ActorSidebar";
 import { Loader2, AlertCircle } from "lucide-react";
 
 export default function Home() {
   const { data: matrixData, isLoading, isError, error } = useMatrix();
+  const [selectedActorId, setSelectedActorId] = useState<string | null>(null);
 
   if (isLoading) {
     return (
@@ -26,22 +29,29 @@ export default function Home() {
   }
 
   return (
-    <div className="flex-1 flex overflow-hidden">
-      {/* The Left Sidebar (Actor Browser) will go here.
-        For now, the matrix takes up the full screen width.
-      */}
-      <main className="flex-1 overflow-hidden flex flex-col relative">
-        {/* Analytics Top Bar Placeholder */}
-        <div className="h-10 bg-bg-raised border-b border-border flex items-center px-4 shrink-0 text-xs text-text-secondary font-mono">
-          Tracking {matrixData.total_actors} APT Groups across {matrixData.total_techniques} Techniques
+    <div className="flex-1 flex overflow-hidden w-full h-full">
+      {/* Target Registry Component Input */}
+      <ActorSidebar 
+        selectedActorId={selectedActorId} 
+        onSelectActor={setSelectedActorId} 
+      />
+      
+      {/* Telemetry Visualizer Core */}
+      <main className="flex-1 overflow-hidden flex flex-col relative bg-bg-base">
+        <div className="h-10 bg-bg-raised border-b border-border flex items-center px-4 shrink-0 text-xs text-text-secondary font-mono justify-between">
+          <span>Tracking {matrixData.total_actors} APT Groups across {matrixData.total_techniques} Techniques</span>
+          {selectedActorId && (
+            <span className="text-accent animate-pulse font-semibold">
+              Filter Active: Actor Profile Selected
+            </span>
+          )}
         </div>
         
-        {/* The Live Matrix */}
-        <AttackMatrix matrixData={matrixData} />
-        
+        <AttackMatrix 
+          matrixData={matrixData} 
+          selectedActorId={selectedActorId} 
+        />
       </main>
-      
-      {/* The Right Detail Panel will slide in here later */}
     </div>
   );
 }
