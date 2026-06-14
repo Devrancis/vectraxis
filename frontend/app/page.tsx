@@ -21,6 +21,7 @@ export default function Home() {
   // Queries
   const { data: actorProfile } = useActorDetail(selectedActorId);
   const { data: comparisonResponse, isFetching: isComparing } = useCompareActors(selectedActorId, compareActorId);
+  console.log("RAW BACKEND PAYLOAD:", comparisonResponse);
 
   // Format Single Actor techniques for O(1) lookup
   const actorTechniqueSet = useMemo(() => {
@@ -31,13 +32,14 @@ export default function Home() {
     return set;
   }, [actorProfile]);
 
-  // Format Comparison techniques into exact Sets
+  // Format Comparison techniques into exact Sets mapping to the backend's precise keys
   const comparisonData: ComparisonSets | null = useMemo(() => {
     if (!compareActorId || !comparisonResponse) return null;
+    
     return {
-      shared: new Set(comparisonResponse.shared_techniques),
-      actor1: new Set(comparisonResponse.actor1_only),
-      actor2: new Set(comparisonResponse.actor2_only)
+      shared: new Set(comparisonResponse.shared_techniques || []),
+      actor1: new Set(comparisonResponse.only_actor1 || []),
+      actor2: new Set(comparisonResponse.only_actor2 || [])
     };
   }, [comparisonResponse, compareActorId]);
 
