@@ -6,7 +6,7 @@ from app.stix.indexer import INDEX_ACTORS_KEY
 
 router = APIRouter()
 
-@router.get("/")
+@router.get("")
 async def get_all_actors(industry: Optional[str] = None, country: Optional[str] = None):
     redis = await get_redis()
     data = await redis.get(INDEX_ACTORS_KEY)

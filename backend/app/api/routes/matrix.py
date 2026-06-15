@@ -5,7 +5,7 @@ from app.stix.indexer import INDEX_MATRIX_KEY
 
 router = APIRouter()
 
-@router.get("/")
+@router.get("")
 async def get_attack_matrix():
     redis = await get_redis()
     data = await redis.get(INDEX_MATRIX_KEY)

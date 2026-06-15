@@ -5,7 +5,7 @@ from app.stix.indexer import INDEX_ACTORS_KEY
 
 router = APIRouter()
 
-@router.get("/")
+@router.get("")
 async def compare_actors(actor1: str, actor2: str):
     redis = await get_redis()
     data = await redis.get(INDEX_ACTORS_KEY)
