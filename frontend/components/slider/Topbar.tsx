@@ -14,15 +14,18 @@ export default function Topbar() {
 
       <style>{`
         .animate-marquee {
-          /* Increased to 30s since it has to travel a further distance now */
           animation: marquee 30s linear infinite;
           display: inline-block;
+          
+          /* --- THE FIX: GPU Acceleration --- */
+          will-change: transform;
+          backface-visibility: hidden;
+          -webkit-font-smoothing: antialiased;
         }
         @keyframes marquee {
-          /* Start exactly off the right edge of the browser window */
-          0% { transform: translateX(100vw); }
-          /* Pull to the left until the text completely clears its own width */
-          100% { transform: translateX(-100%); } 
+          /* Using translate3d instead of translateX forces the GPU to take over */
+          0% { transform: translate3d(100vw, 0, 0); }
+          100% { transform: translate3d(-100%, 0, 0); } 
         }
       `}</style>
       
