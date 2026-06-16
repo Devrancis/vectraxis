@@ -64,7 +64,7 @@ export default function Home() {
     <div className="flex flex-col h-screen w-full">
       <header className="h-14 border-b border-border bg-bg-surface flex items-center justify-between px-4 shrink-0 z-20">
         <div className="flex items-center gap-4">
-          <h1 className="font-display font-bold text-accent text-xl tracking-tight">vectraxis.</h1>
+          <h1 className="font-display font-bold text-accent text-xl tracking-tight">Vectraxis</h1>
           <div className="h-6 w-px bg-border mx-2"></div>
           <GlobalSearch 
             matrixData={matrixData} 
