@@ -32,10 +32,10 @@ async def build_and_cache_indexes() -> Dict[str, Any]:
             if tid not in technique_to_actors_map:
                 technique_to_actors_map[tid] = []
             
+            # THE DIET: We removed 'usage' (the massive description text) from this mapping
             technique_to_actors_map[tid].append({
                 "actor_id": actor_id,
-                "actor_name": actor["name"],
-                "usage": usage["use_description"]
+                "actor_name": actor["name"]
             })
 
     # Assemble hierarchical structure for matrix view
@@ -47,6 +47,13 @@ async def build_and_cache_indexes() -> Dict[str, Any]:
                 # Hydrate the dynamic actor statistics fields inside the technique node
                 tech_copy = tech.copy()
                 tech_copy["actor_count"] = technique_actor_counts.get(tid, 0)
+                
+                # THE DIET: Strip massive text fields from the Matrix payload
+                tech_copy.pop("description", None)
+                tech_copy.pop("detection", None)
+                tech_copy.pop("references", None)
+                tech_copy.pop("mitigations", None)
+                
                 tactic_techniques.append(tech_copy)
                 total_techniques_count += 1
                 
@@ -61,18 +68,36 @@ async def build_and_cache_indexes() -> Dict[str, Any]:
         "total_techniques": len(techniques)
     }
 
-    # Hydrate actor records with technique usage data counts
+    # THE DIET: Hydrate lightweight actor records
     processed_actors = []
     for aid, actor in actors.items():
-        actor_copy = actor.copy()
-        actor_copy["technique_count"] = len(actor["techniques_used"])
-        processed_actors.append(actor_copy)
+        light_actor = {
+            "id": actor["id"],
+            "mitre_id": actor.get("mitre_id", ""),
+            "name": actor["name"],
+            "aliases": actor.get("aliases", []),
+            "country": actor.get("country"),
+            "technique_count": len(actor["techniques_used"]),
+            # Keep only the IDs, drop the heavy 'use_description' paragraph
+            "techniques_used": [{"technique_id": u["technique_id"], "tactic_id": u["tactic_id"]} for u in actor["techniques_used"]]
+        }
+        processed_actors.append(light_actor)
 
-    # Save finalized analytical indices down to the caching tier
+    # THE DIET: Create a lightweight techniques dictionary
+    light_techniques = {}
+    for tid, tech in techniques.items():
+        light_techniques[tid] = {
+            "id": tech["id"],
+            "name": tech["name"],
+            "tactic_ids": tech["tactic_ids"],
+            "is_subtechnique": tech.get("is_subtechnique", False),
+            "parent_id": tech.get("parent_id")
+        }
+
     await redis.set(INDEX_MATRIX_KEY, json.dumps(matrix_payload))
     await redis.set(INDEX_ACTORS_KEY, json.dumps({
         "actors": processed_actors,
-        "techniques_raw": techniques,
+        "techniques_raw": light_techniques,
         "technique_mappings": technique_to_actors_map
     }))
     
