@@ -1,4 +1,5 @@
 import json
+import zlib
 from fastapi import APIRouter, HTTPException
 from app.core.redis import get_redis
 from app.stix.indexer import INDEX_ACTORS_KEY
@@ -8,12 +9,15 @@ router = APIRouter()
 @router.get("")
 async def compare_actors(actor1: str, actor2: str):
     redis = await get_redis()
+    # Fetch the compressed binary payload from Upstash
     data = await redis.get(INDEX_ACTORS_KEY)
     
     if not data:
         raise HTTPException(status_code=503, detail="Index not ready.")
         
-    parsed_data = json.loads(data)
+    # Unzip the binary payload, decode to string, and parse JSON
+    decompressed_string = zlib.decompress(data).decode('utf-8')
+    parsed_data = json.loads(decompressed_string)
     actors = parsed_data.get("actors", [])
     
     a1_data = next((a for a in actors if a["id"] == actor1 or a["mitre_id"] == actor1), None)

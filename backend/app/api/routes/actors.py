@@ -1,4 +1,5 @@
 import json
+import zlib
 from fastapi import APIRouter, HTTPException, Query
 from typing import Optional
 from app.core.redis import get_redis
@@ -9,12 +10,15 @@ router = APIRouter()
 @router.get("")
 async def get_all_actors(industry: Optional[str] = None, country: Optional[str] = None):
     redis = await get_redis()
+    # Fetch the compressed binary payload from Upstash
     data = await redis.get(INDEX_ACTORS_KEY)
     
     if not data:
         raise HTTPException(status_code=503, detail="Actors index not ready.")
     
-    parsed_data = json.loads(data)
+    # Unzip the binary payload, decode to string, and parse JSON
+    decompressed_string = zlib.decompress(data).decode('utf-8')
+    parsed_data = json.loads(decompressed_string)
     actors = parsed_data.get("actors", [])
     
     # Apply query filters dynamically
@@ -29,12 +33,15 @@ async def get_all_actors(industry: Optional[str] = None, country: Optional[str] 
 @router.get("/{actor_id}")
 async def get_actor_detail(actor_id: str):
     redis = await get_redis()
+    # Fetch the compressed binary payload from Upstash
     data = await redis.get(INDEX_ACTORS_KEY)
     
     if not data:
         raise HTTPException(status_code=503, detail="Actors index not ready.")
         
-    parsed_data = json.loads(data)
+    # Unzip the binary payload, decode to string, and parse JSON
+    decompressed_string = zlib.decompress(data).decode('utf-8')
+    parsed_data = json.loads(decompressed_string)
     actors = parsed_data.get("actors", [])
     
     for actor in actors:

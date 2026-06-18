@@ -1,4 +1,5 @@
 import json
+import zlib
 from typing import Dict, Any, List
 from app.core.redis import get_redis
 from app.stix.loader import load_and_initialize_stix
@@ -8,8 +9,8 @@ INDEX_ACTORS_KEY = "stix:index:actors"
 
 async def build_and_cache_indexes() -> Dict[str, Any]:
     """
-    Parses and builds lookups from domain maps, storing optimized indices
-    in Redis to power real-time frontend heatmaps and actor comparisons.
+    Parses and builds lookups from domain maps, compressing and storing the full
+    encyclopedic indices in Redis to power real-time frontend heatmaps and context views.
     """
     redis = await get_redis()
     
@@ -32,10 +33,11 @@ async def build_and_cache_indexes() -> Dict[str, Any]:
             if tid not in technique_to_actors_map:
                 technique_to_actors_map[tid] = []
             
-            # THE DIET: We removed 'usage' (the massive description text) from this mapping
+            # THE RESTORATION: Re-adding the rich 'use_description' text
             technique_to_actors_map[tid].append({
                 "actor_id": actor_id,
-                "actor_name": actor["name"]
+                "actor_name": actor["name"],
+                "usage": usage.get("use_description", "No description available.")
             })
 
     # Assemble hierarchical structure for matrix view
@@ -44,15 +46,8 @@ async def build_and_cache_indexes() -> Dict[str, Any]:
         
         for tid, tech in techniques.items():
             if short_name in tech["tactic_ids"]:
-                # Hydrate the dynamic actor statistics fields inside the technique node
                 tech_copy = tech.copy()
                 tech_copy["actor_count"] = technique_actor_counts.get(tid, 0)
-                
-                # THE DIET: Strip massive text fields from the Matrix payload
-                tech_copy.pop("description", None)
-                tech_copy.pop("detection", None)
-                tech_copy.pop("references", None)
-                tech_copy.pop("mitigations", None)
                 
                 tactic_techniques.append(tech_copy)
                 total_techniques_count += 1
@@ -68,38 +63,23 @@ async def build_and_cache_indexes() -> Dict[str, Any]:
         "total_techniques": len(techniques)
     }
 
-    # THE DIET: Hydrate lightweight actor records
     processed_actors = []
     for aid, actor in actors.items():
-        light_actor = {
-            "id": actor["id"],
-            "mitre_id": actor.get("mitre_id", ""),
-            "name": actor["name"],
-            "aliases": actor.get("aliases", []),
-            "country": actor.get("country"),
-            "technique_count": len(actor["techniques_used"]),
-            # Keep only the IDs, drop the heavy 'use_description' paragraph
-            "techniques_used": [{"technique_id": u["technique_id"], "tactic_id": u["tactic_id"]} for u in actor["techniques_used"]]
-        }
-        processed_actors.append(light_actor)
+        actor_copy = actor.copy()
+        actor_copy["technique_count"] = len(actor["techniques_used"])
+        processed_actors.append(actor_copy)
 
-    # THE DIET: Create a lightweight techniques dictionary
-    light_techniques = {}
-    for tid, tech in techniques.items():
-        light_techniques[tid] = {
-            "id": tech["id"],
-            "name": tech["name"],
-            "tactic_ids": tech["tactic_ids"],
-            "is_subtechnique": tech.get("is_subtechnique", False),
-            "parent_id": tech.get("parent_id")
-        }
-
-    await redis.set(INDEX_MATRIX_KEY, json.dumps(matrix_payload))
-    await redis.set(INDEX_ACTORS_KEY, json.dumps({
-        "actors": processed_actors,
-        "techniques_raw": light_techniques,
-        "technique_mappings": technique_to_actors_map
-    }))
+    # THE COMPRESSION ENGINE 
+    compressed_matrix = zlib.compress(json.dumps(matrix_payload).encode('utf-8'))
     
-    print("[VECTRAXIS] Memory index caches compiled successfully.")
+    compressed_actors = zlib.compress(json.dumps({
+        "actors": processed_actors,
+        "techniques_raw": techniques,
+        "technique_mappings": technique_to_actors_map
+    }).encode('utf-8'))
+
+    await redis.set(INDEX_MATRIX_KEY, compressed_matrix)
+    await redis.set(INDEX_ACTORS_KEY, compressed_actors)
+    
+    print("[VECTRAXIS] Encyclopedic memory indices compressed and cached successfully.")
     return matrix_payload
