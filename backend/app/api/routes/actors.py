@@ -1,5 +1,6 @@
 import json
 import zlib
+import base64
 from fastapi import APIRouter, HTTPException, Query
 from typing import Optional
 from app.core.redis import get_redis
@@ -16,8 +17,9 @@ async def get_all_actors(industry: Optional[str] = None, country: Optional[str] 
     if not data:
         raise HTTPException(status_code=503, detail="Actors index not ready.")
     
-    # Unzip the binary payload, decode to string, and parse JSON
-    decompressed_string = zlib.decompress(data).decode('utf-8')
+    # Process the Base64 encoded, zlib compressed string safely
+    raw_bytes = base64.b64decode(data)
+    decompressed_string = zlib.decompress(raw_bytes).decode('utf-8')
     parsed_data = json.loads(decompressed_string)
     actors = parsed_data.get("actors", [])
     
@@ -39,8 +41,9 @@ async def get_actor_detail(actor_id: str):
     if not data:
         raise HTTPException(status_code=503, detail="Actors index not ready.")
         
-    # Unzip the binary payload, decode to string, and parse JSON
-    decompressed_string = zlib.decompress(data).decode('utf-8')
+    # Process the Base64 encoded, zlib compressed string safely
+    raw_bytes = base64.b64decode(data)
+    decompressed_string = zlib.decompress(raw_bytes).decode('utf-8')
     parsed_data = json.loads(decompressed_string)
     actors = parsed_data.get("actors", [])
     

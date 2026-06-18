@@ -1,5 +1,6 @@
 import json
 import zlib
+import base64
 from typing import Dict, Any, List
 from app.core.redis import get_redis
 from app.stix.loader import load_and_initialize_stix
@@ -70,16 +71,18 @@ async def build_and_cache_indexes() -> Dict[str, Any]:
         processed_actors.append(actor_copy)
 
     # THE COMPRESSION ENGINE 
-    compressed_matrix = zlib.compress(json.dumps(matrix_payload).encode('utf-8'))
+    compressed_matrix_bytes = zlib.compress(json.dumps(matrix_payload).encode('utf-8'))
+    safe_matrix_string = base64.b64encode(compressed_matrix_bytes).decode('utf-8')
     
-    compressed_actors = zlib.compress(json.dumps({
+    compressed_actors_bytes = zlib.compress(json.dumps({
         "actors": processed_actors,
         "techniques_raw": techniques,
         "technique_mappings": technique_to_actors_map
     }).encode('utf-8'))
+    safe_actors_string = base64.b64encode(compressed_actors_bytes).decode('utf-8')
 
-    await redis.set(INDEX_MATRIX_KEY, compressed_matrix)
-    await redis.set(INDEX_ACTORS_KEY, compressed_actors)
+    await redis.set(INDEX_MATRIX_KEY, safe_matrix_string)
+    await redis.set(INDEX_ACTORS_KEY, safe_actors_string)
     
-    print("[VECTRAXIS] Encyclopedic memory indices compressed and cached successfully.")
+    print("[VECTRAXIS] Encyclopedic memory indices compressed, encoded, and cached successfully.")
     return matrix_payload

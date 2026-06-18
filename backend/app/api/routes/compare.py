@@ -1,5 +1,6 @@
 import json
 import zlib
+import base64
 from fastapi import APIRouter, HTTPException
 from app.core.redis import get_redis
 from app.stix.indexer import INDEX_ACTORS_KEY
@@ -15,8 +16,9 @@ async def compare_actors(actor1: str, actor2: str):
     if not data:
         raise HTTPException(status_code=503, detail="Index not ready.")
         
-    # Unzip the binary payload, decode to string, and parse JSON
-    decompressed_string = zlib.decompress(data).decode('utf-8')
+    # Process the Base64 encoded, zlib compressed string safely
+    raw_bytes = base64.b64decode(data)
+    decompressed_string = zlib.decompress(raw_bytes).decode('utf-8')
     parsed_data = json.loads(decompressed_string)
     actors = parsed_data.get("actors", [])
     
